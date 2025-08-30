@@ -1,190 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>3D Scroll Scrub PNG Sequence</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bismay • Portfolio</title>
+  <meta name="description" content="Portfolio — Bismay • minimal black & white UI with interactive 3D-style project cards" />
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100%;
-      background: #fff;
-    }
-    canvas {
-      display: block;
-      margin: auto;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      image-rendering: crisp-edges;
-      image-rendering: -webkit-optimize-contrast;
-    }
-    #help-overlay {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 16px 20px;
-      border-radius: 12px;
-      font-family: sans-serif;
-      font-size: 14px;
-      line-height: 1.6;
-      max-width: 280px;
-      z-index: 9999;
-      opacity: 1;
-      transition: opacity 0.6s ease;
-      cursor: grab;
-    }
-    #help-overlay:active {
-      cursor: grabbing;
-    }
+    :root{--bg:#fff;--fg:#000;--muted:#666;--accent:#000}
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,Arial,Helvetica,sans-serif}
+    a{color:inherit;text-decoration:none}
+    .container{max-width:1100px;margin:0 auto;padding:48px 24px}
+
+    /* Hero */
+    .hero{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+    .title{font-weight:800;font-size:clamp(28px,6vw,54px);line-height:1}
+    .subtitle{color:var(--muted);margin-top:8px;font-size:16px}
+
+    /* Animated words */
+    .animated-words{display:inline-block;margin-left:6px;vertical-align:middle}
+    .animated-words span{display:inline-block;opacity:0;transform:translateY(6px);animation:wordIn .9s forwards;}
+    .animated-words span:nth-child(1){animation-delay:.1s}
+    .animated-words span:nth-child(2){animation-delay:.35s}
+    .animated-words span:nth-child(3){animation-delay:.6s}
+    @keyframes wordIn{to{opacity:1;transform:none}}
+
+    /* Grid */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
+    @media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:640px){.grid{grid-template-columns:1fr}}
+
+    /* Card */
+    .card{background:#fff;border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,0.06);cursor:pointer;transform-style:preserve-3d;transition:transform .25s ease, box-shadow .25s ease}
+    .card:hover{box-shadow:0 22px 60px rgba(0,0,0,0.12);}
+    .card-inner{transform-style:preserve-3d;transition:transform .18s ease}
+    .card-thumb{height:140px;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#f6f6f6,#e9e9e9);display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700}
+    .card-title{font-weight:700;margin-top:12px}
+    .card-desc{color:var(--muted);font-size:14px;margin-top:8px}
+    .card-meta{display:flex;gap:10px;align-items:center;margin-top:14px;font-size:13px;color:var(--muted)}
+
+    /* 3D hover perspective */
+    .card-3d{perspective:900px}
+
+    /* Footer */
+    footer{margin-top:56px;padding:24px 0;color:var(--muted);text-align:center}
   </style>
 </head>
 <body>
-  <canvas id="sequence"></canvas>
+  <div class="container">
+    <header class="hero">
+      <div>
+        <div class="title">Bismay • <span style="opacity:.8">Developer</span></div>
+        <div class="subtitle">Minimal, modern projects — <span class="animated-words"><span>Design</span><span>Code</span><span>Ship</span></span></div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-weight:700">GitHub</div>
+        <div style="color:var(--muted)"><a href="https://github.com/Bismay-exe" target="_blank" rel="noopener">github.com/Bismay-exe</a></div>
+      </div>
+    </header>
 
-  <div id="help-overlay">
-    <strong>Controls</strong><br>
-    🖱️ Scroll / drag → rotate<br>
-    👆 Tap → reset<br>
-    👆👆 Double-tap → stop<br>
-    ✌️ Two-finger tap → last frame<br>
-    🤏 Pinch → zoom<br><br>
-    ⬅️➡️ Arrows → rotate<br>
-    ␣ Space → stop<br>
-    R → reset<br>
-    L → last frame<br>
-    + / - → zoom<br>
-    H → toggle help
+    <section aria-labelledby="projects">
+      <h2 id="projects" style="margin-top:48px">Selected projects</h2>
+      <p style="color:var(--muted)">Projects pulled from the public GitHub profile. Click any card to view the repo.</p>
+
+      <div class="grid" id="projects-grid">
+        <!-- Cards will be injected here -->
+      </div>
+    </section>
+
+    <footer>
+      © <span id="year"></span> Bismay • Built with plain HTML/CSS/JS
+    </footer>
   </div>
 
   <script>
-    const canvas = document.getElementById("sequence");
-    const ctx = canvas.getContext("2d");
-    let width, height;
-    function resizeCanvas() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+    // Project list sourced from GitHub profile (public repos); see README for live links.
+    const projects = [
+      {name:'Beautiful-Notes', desc:'Sleek notes app with glass UI', url:'https://github.com/Bismay-exe/Beautiful-Notes'},
+      {name:'5GTile', desc:'5G toggle / Tile project (Kotlin)', url:'https://github.com/Bismay-exe/5GTile'},
+      {name:'Mechanical-Calculator', desc:'All-in-one calculator with themes', url:'https://github.com/Bismay-exe/Mechanical-Calculator'},
+      {name:'My-Heavenly-Archive', desc:'Media gallery with filters & lightbox', url:'https://github.com/Bismay-exe/My-Heavenly-Archive'},
+      {name:'Crypto-converter', desc:'Realtime crypto ↔ INR/USD/EUR converter', url:'https://github.com/Bismay-exe/Crypto-converter'},
+      {name:'login-page', desc:'Simple minimal login page template', url:'https://github.com/Bismay-exe/login-page'},
+      {name:'Bismay-exe', desc:'Personal profile & readme repo', url:'https://github.com/Bismay-exe/Bismay-exe'},
+      {name:'Beautiful-Notes-Showcase', desc:'(extra) project showcase', url:'https://github.com/Bismay-exe/Beautiful-Notes-Showcase'}
+    ];
 
-    const frameCount = 300;
-    const images = [];
-    let loaded = 0;
+    // Build cards
+    const grid = document.getElementById('projects-grid');
+    projects.forEach((p, idx) => {
+      const col = document.createElement('a');
+      col.className = 'card card-3d';
+      col.href = p.url; col.target = '_blank'; col.rel = 'noopener';
 
-    // Preload sequence
-    for (let i = 1; i <= frameCount; i++) {
-      const img = new Image();
-      img.src = `male${String(i).padStart(4,"0")}.png`;
-      img.onload = () => {
-        loaded++;
-        if (loaded === 1) drawFrame(1); // show first frame asap
-      };
-      images.push(img);
-    }
+      const inner = document.createElement('div'); inner.className = 'card-inner';
+      const thumb = document.createElement('div'); thumb.className = 'card-thumb'; thumb.textContent = p.name;
+      const title = document.createElement('div'); title.className = 'card-title'; title.textContent = p.name.replace(/[-_]/g,' ');
+      const desc = document.createElement('div'); desc.className = 'card-desc'; desc.textContent = p.desc;
+      const meta = document.createElement('div'); meta.className = 'card-meta'; meta.innerHTML = `<span>GitHub</span><span>•</span><span>View Repo</span>`;
 
-    let currentFrame = 1;
-    let targetFrame = 1;
-    let isPlaying = true;
-    let scale = 1;
-    let tiltX = 0, tiltY = 0;
+      inner.appendChild(thumb); inner.appendChild(title); inner.appendChild(desc); inner.appendChild(meta);
+      col.appendChild(inner);
+      grid.appendChild(col);
 
-    function drawFrame(frame) {
-      ctx.clearRect(0, 0, width, height);
-      const img = images[frame - 1];
-      if (!img.complete) return;
-      const iw = img.width * scale;
-      const ih = img.height * scale;
-      const x = (width - iw) / 2 + tiltX * 30;
-      const y = (height - ih) / 2 + tiltY * 30;
-      ctx.drawImage(img, x, y, iw, ih);
-    }
+      // 3D hover effect: mousemove on card
+      col.addEventListener('mousemove', (e)=>{
+        const rect = col.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 -> 0.5
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        const tiltX = (y * -1) * 12; // rotateX
+        const tiltY = x * 12; // rotateY
+        inner.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(8px)`;
+      });
+      col.addEventListener('mouseleave', ()=>{
+        inner.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(0px)';
+      });
 
-    // Smooth animation loop
-    function animate() {
-      if (isPlaying) {
-        currentFrame += (targetFrame - currentFrame) * 0.1;
-        if (Math.abs(targetFrame - currentFrame) < 0.01) currentFrame = targetFrame;
-        drawFrame(Math.round(currentFrame));
-      }
-      requestAnimationFrame(animate);
-    }
-    animate();
-
-    // --- Scroll & drag scrub ---
-    let lastY = 0;
-    window.addEventListener("wheel", (e) => {
-      targetFrame += Math.sign(e.deltaY) * 3;
-      targetFrame = Math.max(1, Math.min(frameCount, targetFrame));
-    });
-    window.addEventListener("mousedown", (e) => { lastY = e.clientY; });
-    window.addEventListener("mousemove", (e) => {
-      if (e.buttons) {
-        let delta = e.clientY - lastY;
-        targetFrame += delta > 0 ? 2 : -2;
-        targetFrame = Math.max(1, Math.min(frameCount, targetFrame));
-        lastY = e.clientY;
-      }
+      // subtle entrance animation stagger
+      inner.style.opacity = 0; inner.style.transform += ' translateY(10px)';
+      setTimeout(()=>{ inner.style.transition='transform .5s ease, opacity .5s ease'; inner.style.opacity=1; inner.style.transform='none'; }, idx*80);
     });
 
-    // --- Tilt effect ---
-    window.addEventListener("mousemove", (e) => {
-      tiltX = (e.clientX / width - 0.5);
-      tiltY = (e.clientY / height - 0.5);
+    // small accessibility: keyboard focus styling
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Tab') document.body.classList.add('show-focus');
     });
 
-    // --- Keyboard controls ---
-    window.addEventListener("keydown", (e) => {
-      switch (e.key.toLowerCase()) {
-        case "arrowright": targetFrame = Math.min(frameCount, targetFrame + 1); break;
-        case "arrowleft": targetFrame = Math.max(1, targetFrame - 1); break;
-        case " ": isPlaying = !isPlaying; break;
-        case "r": targetFrame = 1; break;
-        case "l": targetFrame = frameCount; break;
-        case "+": scale = Math.min(2, scale + 0.1); break;
-        case "-": scale = Math.max(0.5, scale - 0.1); break;
-        case "h":
-          helpVisible = !helpVisible;
-          helpOverlay.style.opacity = helpVisible ? 1 : 0;
-          break;
-      }
-    });
-
-    // --- Help overlay auto-hide + toggle ---
-    const helpOverlay = document.getElementById("help-overlay");
-    let helpVisible = true;
-    setTimeout(() => {
-      helpOverlay.style.opacity = 0;
-      helpVisible = false;
-    }, 5000);
-
-    // --- Draggable help overlay (desktop only) ---
-    let offsetX, offsetY, isDragging = false;
-    helpOverlay.addEventListener("mousedown", (e) => {
-      isDragging = true;
-      offsetX = e.clientX - helpOverlay.getBoundingClientRect().left;
-      offsetY = e.clientY - helpOverlay.getBoundingClientRect().top;
-      helpOverlay.style.transition = "none";
-    });
-    window.addEventListener("mousemove", (e) => {
-      if (isDragging) {
-        helpOverlay.style.left = (e.clientX - offsetX) + "px";
-        helpOverlay.style.top = (e.clientY - offsetY) + "px";
-        helpOverlay.style.right = "auto";
-      }
-    });
-    window.addEventListener("mouseup", () => {
-      if (isDragging) {
-        isDragging = false;
-        helpOverlay.style.transition = "opacity 0.6s ease";
-      }
-    });
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
