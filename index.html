@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cyberfiction Style • PNG Sequence</title>
+  <title>Cyberfiction Style • PNG Scroll Sequence</title>
   <style>
     body {
       margin: 0;
@@ -11,6 +11,7 @@
       color: #fff;
       font-family: 'Inter', sans-serif;
       overflow-x: hidden;
+      height: 600vh; /* enough scroll space for sequence */
     }
     header {
       position: relative;
@@ -60,7 +61,7 @@
 <body>
   <header>
     <h1>Cyberfiction Inspired</h1>
-    <p>Interactive centerpiece using PNG sequence</p>
+    <p>Scroll down to rotate the 3D PNG sequence</p>
   </header>
 
   <!-- Loading text -->
@@ -71,9 +72,8 @@
 
   <main>
     <h2>About</h2>
-    <p>This demo swaps a PNG sequence to simulate 3D rotation of a model. 
-       Replace <code>male0001.png ... male0300.png</code> in the root folder with your own frames.</p>
-    <div style="height:100vh"></div>
+    <p>This demo scrubs through <code>male0001.png ... male0300.png</code> 
+       in the root folder based on your scroll position.</p>
   </main>
 
   <script>
@@ -81,9 +81,9 @@
     const loading = document.getElementById('loading');
 
     const totalFrames = 300; // you have 300 PNGs
-    let currentFrame = 1;
-    let targetRotX = 0, targetRotY = 0;
     const frames = [];
+
+    let targetRotX = 0, targetRotY = 0;
 
     // Preload all images
     let loadedCount = 0;
@@ -99,42 +99,36 @@
         if (loadedCount === totalFrames) {
           loading.style.display = "none";
           hero.style.opacity = 1;
-          startAnimation();
+          updateFrame();
         }
       };
       frames.push(img);
     }
 
-    // Mouse interaction
+    // Scroll controls frame
+    function updateFrame() {
+      const scrollTop = window.scrollY;
+      const maxScroll = document.body.scrollHeight - window.innerHeight;
+      const scrollFraction = scrollTop / maxScroll;
+      const frameIndex = Math.min(
+        totalFrames - 1,
+        Math.floor(scrollFraction * totalFrames)
+      );
+      const frameNumber = String(frameIndex + 1).padStart(4, '0');
+      hero.src = `male${frameNumber}.png`;
+      requestAnimationFrame(updateFrame);
+    }
+
+    // Mouse interaction for tilt
     window.addEventListener('mousemove', (e) => {
       const x = (e.clientX / window.innerWidth) * 2 - 1;
       const y = (e.clientY / window.innerHeight) * 2 - 1;
       targetRotY = x * 10; // horizontal tilt
       targetRotX = y * 10; // vertical tilt
+      hero.style.transform = `translate(-50%, -50%) rotateX(${targetRotX}deg) rotateY(${targetRotY}deg)`;
     });
 
-    // Scroll effect
-    window.addEventListener('scroll', () => {
-      const scale = 1 + window.scrollY * 0.001;
-      hero.style.transform = `translate(-50%, -50%) scale(${scale}) rotateX(${targetRotX}deg) rotateY(${targetRotY}deg)`;
-    });
-
-    // Sequence animation
-    function updateFrame() {
-      currentFrame = (currentFrame % totalFrames) + 1;
-      const frameNumber = String(currentFrame).padStart(4, '0');
-      hero.src = `male${frameNumber}.png`;
-    }
-
-    function startAnimation() {
-      setInterval(updateFrame, 100); // 10 fps auto rotation
-
-      function animateTilt() {
-        hero.style.transform = `translate(-50%, -50%) scale(1) rotateX(${targetRotX}deg) rotateY(${targetRotY}deg)`;
-        requestAnimationFrame(animateTilt);
-      }
-      animateTilt();
-    }
+    requestAnimationFrame(updateFrame);
   </script>
 </body>
 </html>
