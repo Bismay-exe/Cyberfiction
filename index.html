@@ -11,15 +11,22 @@
     html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
     a{color:inherit;text-decoration:none}
 
+    /* PNG sequence hero always on top */
     #hero{
       position: fixed;
-      top:0;left:0;width:100%;height:100%;z-index:9999;
-      pointer-events:none;background:white;display:grid;place-items:center;
+      top:0; left:0; width:100%; height:100%;
+      z-index:9999;
+      pointer-events:none;
+      background:white;
+      display:grid;
+      place-items:center;
     }
     #hero canvas{width:100%;height:100%;object-fit:contain;}
     #loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:monospace;color:var(--muted);z-index:10000;}
 
+    /* container for portfolio content */
     .container{max-width:1100px;margin:0 auto;padding:48px 24px;position:relative;z-index:1;background:rgba(255,255,255,0.85);}
+
     section#projects{padding:56px 0}
     h2{font-size:20px;margin:0 0 10px}
     p.lead{color:var(--muted);margin-top:6px}
@@ -83,7 +90,7 @@
     async function fetchReadme(owner,repo){try{const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`);if(!res.ok)return null;const data=await res.json();const content=atob(data.content);const first=content.split('\n\n').find(p=>p.trim().length>0);return first?first.replace(/\n/g,' '):null;}catch(e){return null;}}
     async function fetchTopics(owner,repo){try{const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/topics`,{headers:{'Accept':'application/vnd.github.mercy-preview+json'}});if(!res.ok)return[];const j=await res.json();return j.names||[];}catch(e){return[];}}
     function createCard(repo){const link=document.createElement('a');link.className='card card-3d';link.href=repo.html_url;link.target='_blank';link.rel='noopener';const inner=document.createElement('div');inner.className='card-inner';const thumb=document.createElement('div');thumb.className='card-thumb';thumb.textContent=repo.name;const title=document.createElement('div');title.className='card-title';title.textContent=repo.name.replace(/[-_]/g,' ');const desc=document.createElement('div');desc.className='card-desc';desc.textContent='⏳ Loading project info...';const meta=document.createElement('div');meta.className='card-meta';inner.append(thumb,title,desc,meta);link.append(inner);grid.append(link);link.addEventListener('mousemove',e=>{const rect=link.getBoundingClientRect();const x=(e.clientX-rect.left)/rect.width-0.5;const y=(e.clientY-rect.top)/rect.height-0.5;const rx=(-y)*12;const ry=x*12;inner.style.transform=`rotateX(${rx}deg) rotateY(${ry}deg) translateZ(8px)`;});link.addEventListener('mouseleave',()=>{inner.style.transform='none';});return {link,inner,thumb,title,desc,meta};}
-    (async()=>{const repos=await fetchAllRepos();if(!repos||repos.length===0){grid.innerHTML='<div style="color:var(--muted)">No public repos found.</div>';return;}for(const r of repos){const cardEls=createCard(r);(async()=>{const [readme,topics,repoData]=await Promise.all([fetchReadme(owner,r.name),fetchTopics(owner,r.name),fetch(`https://api.github.com/repos/${owner}/${r.name}`).then(res=>res.json())]);cardEls.desc.textContent=readme||'⚡ Project details coming soon...';if(topics&&topics.length){cardEls.meta.innerHTML=topics.map(t=>`<span class="badge">${t}</span>`).join(' ');} let stats=''; if(repoData){stats=`⭐ ${repoData.stargazers_count} &nbsp; 🍴 ${repoData.forks_count} &nbsp; 🕒 ${new Date(repoData.updated_at).toLocaleDateString()}`;} let live=''; if(repoData&&(repoData.has_pages||repoData.homepage)){const liveUrl=repoData.homepage?repoData.homepage:`https://${owner}.github.io/${r.name}/`;live=` <a style="margin-left:8px;font-weight:600" href="${liveUrl}" target="_blank" rel="noopener">Live</a>`;} if(cardEls.meta.innerHTML) cardEls.meta.innerHTML+=`<div style="flex:1"></div><div class="meta-right">${stats}${live}</div>`;else cardEls.meta.innerHTML=`<div class="meta-right">${stats}${live}</div>`;})();}}
+    (async()=>{const repos=await fetchAllRepos();if(!repos||repos.length===0){grid.innerHTML='<div style="color:var(--muted)">No public repos found.</div>';return;}for(const r of repos){const cardEls=createCard(r);(async()=>{const [readme,topics,repoData]=await Promise.all([fetchReadme(owner,r.name),fetchTopics(owner,r.name),fetch(`https://api.github.com/repos/${owner}/${r.name}`).then(res=>res.json())]);cardEls.desc.textContent=readme||'⚡ Project details coming soon...';if(topics&&topics.length){cardEls.meta.innerHTML=topics.map(t=>`<span class="badge">${t}</span>`).join(' ');} let stats=''; if(repoData){stats=`⭐ ${repoData.stargazers_count} &nbsp; 🍴 ${repoData.forks_count} &nbsp; 🕒 ${new Date(repoData.updated_at).toLocaleDateString()}`;} let live=''; if(repoData&&(repoData.has_pages||repoData.homepage)){const liveUrl=repoData.homepage?repoData.homepage:`https://${owner}.github.io/${r.name}/`;live=` <a style="margin-left:8px;font-weight:600" href="${liveUrl}" target="_blank" rel="noopener">Live</a>`;} if(cardEls.meta.innerHTML) cardEls.meta.innerHTML+=`<div style="flex:1"></div><div class="meta-right">${stats}${live}</div>`;else cardEls.meta.innerHTML=`<div class="meta-right">${stats}${live}</div>`;})();}})();
 
     // help overlay drag
     const help=document.getElementById('help-overlay');let dragging=false,offX=0,offY=0;
