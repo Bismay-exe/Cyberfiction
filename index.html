@@ -1,134 +1,190 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cyberfiction Style • PNG Scroll Sequence</title>
+  <meta charset="UTF-8">
+  <title>3D Scroll Scrub PNG Sequence</title>
   <style>
-    body {
+    html, body {
       margin: 0;
-      background: #000;
-      color: #fff;
-      font-family: 'Inter', sans-serif;
-      overflow-x: hidden;
-      height: 600vh; /* enough scroll space for sequence */
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      background: #fff;
     }
-    header {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-      padding: 4rem 1rem;
-    }
-    header h1 {
-      font-size: 3rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-    header p {
-      font-size: 1.25rem;
-      color: #aaa;
-    }
-    #hero-sequence {
-      position: fixed;
+    canvas {
+      display: block;
+      margin: auto;
+      position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 1;
-      max-width: 80vw;
-      max-height: 80vh;
-      pointer-events: none;
-      transition: transform 0.1s ease-out;
-      opacity: 0; /* hidden until preloaded */
+      image-rendering: crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
     }
-    #loading {
+    #help-overlay {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #0ff;
-      font-size: 1.5rem;
-      font-family: monospace;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      font-family: sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 280px;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 0.6s ease;
+      cursor: grab;
     }
-    main {
-      position: relative;
-      z-index: 2;
-      background: rgba(0,0,0,0.85);
-      padding: 4rem 2rem;
-      text-align: center;
+    #help-overlay:active {
+      cursor: grabbing;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Cyberfiction Inspired</h1>
-    <p>Scroll down to rotate the 3D PNG sequence</p>
-  </header>
+  <canvas id="sequence"></canvas>
 
-  <!-- Loading text -->
-  <div id="loading">Loading 0%</div>
-
-  <!-- Image sequence -->
-  <img id="hero-sequence" src="male0001.png" alt="3D Sequence Frame"/>
-
-  <main>
-    <h2>About</h2>
-    <p>This demo scrubs through <code>male0001.png ... male0300.png</code> 
-       in the root folder based on your scroll position.</p>
-  </main>
+  <div id="help-overlay">
+    <strong>Controls</strong><br>
+    🖱️ Scroll / drag → rotate<br>
+    👆 Tap → reset<br>
+    👆👆 Double-tap → stop<br>
+    ✌️ Two-finger tap → last frame<br>
+    🤏 Pinch → zoom<br><br>
+    ⬅️➡️ Arrows → rotate<br>
+    ␣ Space → stop<br>
+    R → reset<br>
+    L → last frame<br>
+    + / - → zoom<br>
+    H → toggle help
+  </div>
 
   <script>
-    const hero = document.getElementById('hero-sequence');
-    const loading = document.getElementById('loading');
+    const canvas = document.getElementById("sequence");
+    const ctx = canvas.getContext("2d");
+    let width, height;
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
 
-    const totalFrames = 300; // you have 300 PNGs
-    const frames = [];
+    const frameCount = 300;
+    const images = [];
+    let loaded = 0;
 
-    let targetRotX = 0, targetRotY = 0;
-
-    // Preload all images
-    let loadedCount = 0;
-    for (let i = 1; i <= totalFrames; i++) {
-      const frameNumber = String(i).padStart(4, '0'); // male0001
+    // Preload sequence
+    for (let i = 1; i <= frameCount; i++) {
       const img = new Image();
-      img.src = `male${frameNumber}.png`;
+      img.src = `male${String(i).padStart(4,"0")}.png`;
       img.onload = () => {
-        loadedCount++;
-        const percent = Math.floor((loadedCount / totalFrames) * 100);
-        loading.textContent = `Loading ${percent}%`;
-
-        if (loadedCount === totalFrames) {
-          loading.style.display = "none";
-          hero.style.opacity = 1;
-          updateFrame();
-        }
+        loaded++;
+        if (loaded === 1) drawFrame(1); // show first frame asap
       };
-      frames.push(img);
+      images.push(img);
     }
 
-    // Scroll controls frame
-    function updateFrame() {
-      const scrollTop = window.scrollY;
-      const maxScroll = document.body.scrollHeight - window.innerHeight;
-      const scrollFraction = scrollTop / maxScroll;
-      const frameIndex = Math.min(
-        totalFrames - 1,
-        Math.floor(scrollFraction * totalFrames)
-      );
-      const frameNumber = String(frameIndex + 1).padStart(4, '0');
-      hero.src = `male${frameNumber}.png`;
-      requestAnimationFrame(updateFrame);
+    let currentFrame = 1;
+    let targetFrame = 1;
+    let isPlaying = true;
+    let scale = 1;
+    let tiltX = 0, tiltY = 0;
+
+    function drawFrame(frame) {
+      ctx.clearRect(0, 0, width, height);
+      const img = images[frame - 1];
+      if (!img.complete) return;
+      const iw = img.width * scale;
+      const ih = img.height * scale;
+      const x = (width - iw) / 2 + tiltX * 30;
+      const y = (height - ih) / 2 + tiltY * 30;
+      ctx.drawImage(img, x, y, iw, ih);
     }
 
-    // Mouse interaction for tilt
-    window.addEventListener('mousemove', (e) => {
-      const x = (e.clientX / window.innerWidth) * 2 - 1;
-      const y = (e.clientY / window.innerHeight) * 2 - 1;
-      targetRotY = x * 10; // horizontal tilt
-      targetRotX = y * 10; // vertical tilt
-      hero.style.transform = `translate(-50%, -50%) rotateX(${targetRotX}deg) rotateY(${targetRotY}deg)`;
+    // Smooth animation loop
+    function animate() {
+      if (isPlaying) {
+        currentFrame += (targetFrame - currentFrame) * 0.1;
+        if (Math.abs(targetFrame - currentFrame) < 0.01) currentFrame = targetFrame;
+        drawFrame(Math.round(currentFrame));
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // --- Scroll & drag scrub ---
+    let lastY = 0;
+    window.addEventListener("wheel", (e) => {
+      targetFrame += Math.sign(e.deltaY) * 3;
+      targetFrame = Math.max(1, Math.min(frameCount, targetFrame));
+    });
+    window.addEventListener("mousedown", (e) => { lastY = e.clientY; });
+    window.addEventListener("mousemove", (e) => {
+      if (e.buttons) {
+        let delta = e.clientY - lastY;
+        targetFrame += delta > 0 ? 2 : -2;
+        targetFrame = Math.max(1, Math.min(frameCount, targetFrame));
+        lastY = e.clientY;
+      }
     });
 
-    requestAnimationFrame(updateFrame);
+    // --- Tilt effect ---
+    window.addEventListener("mousemove", (e) => {
+      tiltX = (e.clientX / width - 0.5);
+      tiltY = (e.clientY / height - 0.5);
+    });
+
+    // --- Keyboard controls ---
+    window.addEventListener("keydown", (e) => {
+      switch (e.key.toLowerCase()) {
+        case "arrowright": targetFrame = Math.min(frameCount, targetFrame + 1); break;
+        case "arrowleft": targetFrame = Math.max(1, targetFrame - 1); break;
+        case " ": isPlaying = !isPlaying; break;
+        case "r": targetFrame = 1; break;
+        case "l": targetFrame = frameCount; break;
+        case "+": scale = Math.min(2, scale + 0.1); break;
+        case "-": scale = Math.max(0.5, scale - 0.1); break;
+        case "h":
+          helpVisible = !helpVisible;
+          helpOverlay.style.opacity = helpVisible ? 1 : 0;
+          break;
+      }
+    });
+
+    // --- Help overlay auto-hide + toggle ---
+    const helpOverlay = document.getElementById("help-overlay");
+    let helpVisible = true;
+    setTimeout(() => {
+      helpOverlay.style.opacity = 0;
+      helpVisible = false;
+    }, 5000);
+
+    // --- Draggable help overlay (desktop only) ---
+    let offsetX, offsetY, isDragging = false;
+    helpOverlay.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      offsetX = e.clientX - helpOverlay.getBoundingClientRect().left;
+      offsetY = e.clientY - helpOverlay.getBoundingClientRect().top;
+      helpOverlay.style.transition = "none";
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (isDragging) {
+        helpOverlay.style.left = (e.clientX - offsetX) + "px";
+        helpOverlay.style.top = (e.clientY - offsetY) + "px";
+        helpOverlay.style.right = "auto";
+      }
+    });
+    window.addEventListener("mouseup", () => {
+      if (isDragging) {
+        isDragging = false;
+        helpOverlay.style.transition = "opacity 0.6s ease";
+      }
+    });
   </script>
 </body>
 </html>
