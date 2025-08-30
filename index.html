@@ -11,18 +11,15 @@
     html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
     a{color:inherit;text-decoration:none}
 
-    /* Hero (PNG sequence) */
-    #hero{height:100vh; display:grid; place-items:center; position:relative; overflow:hidden}
-    canvas#sequence{max-width:90vw; max-height:85vh; display:block}
-    #loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:monospace;color:var(--muted)}
+    #hero{
+      position: fixed;
+      top:0;left:0;width:100%;height:100%;z-index:9999;
+      pointer-events:none;background:white;display:grid;place-items:center;
+    }
+    #hero canvas{width:100%;height:100%;object-fit:contain;}
+    #loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:monospace;color:var(--muted);z-index:10000;}
 
-    /* content */
-    .container{max-width:1100px;margin:0 auto;padding:48px 24px}
-    .hero-copy{position:absolute;top:36px;left:36px;z-index:20}
-    .title{font-weight:800;font-size:28px}
-    .subtitle{color:var(--muted);margin-top:6px}
-
-    /* Projects */
+    .container{max-width:1100px;margin:0 auto;padding:48px 24px;position:relative;z-index:1;background:rgba(255,255,255,0.85);}
     section#projects{padding:56px 0}
     h2{font-size:20px;margin:0 0 10px}
     p.lead{color:var(--muted);margin-top:6px}
@@ -31,7 +28,7 @@
     @media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:640px){.grid{grid-template-columns:1fr}}
 
-    .card{background:var(--bg);border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,0.04);cursor:pointer;transform-style:preserve-3d;transition:transform .22s ease, box-shadow .22s ease}
+    .card{background:rgba(255,255,255,0.95);border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,0.04);cursor:pointer;transform-style:preserve-3d;transition:transform .22s ease, box-shadow .22s ease}
     .card:hover{box-shadow:0 26px 60px rgba(0,0,0,0.08)}
     .card-inner{transform-style:preserve-3d;transition:transform .18s ease}
     .card-thumb{height:120px;border-radius:8px;overflow:hidden;background:linear-gradient(180deg,#fafafa,#f0f0f0);display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700}
@@ -40,11 +37,8 @@
     .card-meta{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted);flex-wrap:wrap}
     .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#fff;color:#000;font-size:12px;margin:2px;box-shadow:0 1px 3px rgba(0,0,0,0.12)}
     .meta-right{margin-left:auto;font-weight:600}
-
     footer{padding:36px 0;color:var(--muted);text-align:center}
-
-    /* help overlay (draggable desktop only) */
-    #help-overlay{position:fixed;top:20px;right:20px;background:rgba(0,0,0,0.8);color:#fff;padding:12px 14px;border-radius:10px;font-size:13px;z-index:999;cursor:grab}
+    #help-overlay{position:fixed;top:20px;right:20px;background:rgba(0,0,0,0.8);color:#fff;padding:12px 14px;border-radius:10px;font-size:13px;z-index:9999;cursor:grab}
     #help-overlay:active{cursor:grabbing}
   </style>
 </head>
@@ -52,10 +46,6 @@
   <header id="hero">
     <canvas id="sequence"></canvas>
     <div id="loading">Loading...</div>
-    <div class="hero-copy">
-      <div class="title">Bismay • Developer</div>
-      <div class="subtitle">Interactive portfolio — scroll to explore</div>
-    </div>
   </header>
 
   <main class="container">
@@ -70,168 +60,37 @@
   <div id="help-overlay">Controls: Scroll to spin • Drag (desktop) • Keys: ← → space R L H</div>
 
   <script>
-    // ========== PNG SEQUENCE HERO ===========
-    const canvas = document.getElementById('sequence');
-    const ctx = canvas.getContext('2d');
-    let W = window.innerWidth, H = window.innerHeight;
-    function resize(){ W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; }
-    window.addEventListener('resize', resize); resize();
+    // PNG sequence
+    const canvas=document.getElementById('sequence'), ctx=canvas.getContext('2d');
+    let W=window.innerWidth,H=window.innerHeight;
+    function resize(){W=window.innerWidth;H=window.innerHeight;canvas.width=W;canvas.height=H;}
+    window.addEventListener('resize',resize);resize();
+    const TOTAL=300, cache={}, buffer=8;
+    let current=1, velocity=0, firstLoaded=false, scale=1, tiltX=0, tiltY=0;
+    function frameFile(n){return `male${String(n).padStart(4,'0')}.png`;}
+    function loadFrame(n,cb){if(n<1)n+=TOTAL;if(n>TOTAL)n-=TOTAL;if(cache[n]){if(cb)cb(cache[n]);return;}const i=new Image();i.src=frameFile(n);i.onload=()=>{cache[n]=i;if(!firstLoaded){firstLoaded=true;document.getElementById('loading').style.display='none';}if(cb)cb(i);}} 
+    loadFrame(1,i=>draw(1));
+    function preload(center){for(let off=-buffer;off<=buffer;off++){let idx=Math.round(center)+off;if(idx<1)idx+=TOTAL;if(idx>TOTAL)idx-=TOTAL;loadFrame(idx);}}
+    function draw(frame){const img=cache[Math.round(frame)];if(!img)return;ctx.clearRect(0,0,W,H);const iw=img.width*scale;const ih=img.height*scale;const x=(W-iw)/2+tiltX*30;const y=(H-ih)/2+tiltY*30;ctx.drawImage(img,x,y,iw,ih);}
+    function update(){current+=velocity;velocity*=0.92;if(current>TOTAL)current=1;if(current<1)current=TOTAL;const idx=Math.round(current);if(cache[idx])draw(current);preload(idx);requestAnimationFrame(update);}requestAnimationFrame(update);
+    window.addEventListener('wheel',e=>{velocity+=Math.sign(e.deltaY)*2.2},{passive:true});
+    let lastY=0;window.addEventListener('mousedown',e=>{lastY=e.clientY;});
+    window.addEventListener('mousemove',e=>{if(e.buttons){velocity+=(e.clientY-lastY)*0.06;lastY=e.clientY;} tiltX=(e.clientX/W-0.5);tiltY=(e.clientY/H-0.5);});
 
-    const TOTAL = 300; // male0001.png ... male0300.png
-    const cache = {};
-    const buffer = 8;
-    let current = 1, velocity = 0, firstLoaded=false;
-    let scale = 1;
-    let tiltX=0, tiltY=0;
+    // GitHub portfolio
+    const owner='Bismay-exe', grid=document.getElementById('projects-grid');
+    async function fetchAllRepos(){let repos=[],page=1;while(true){const res=await fetch(`https://api.github.com/users/${owner}/repos?per_page=100&page=${page}`);if(!res.ok)break;const chunk=await res.json();if(chunk.length===0)break;repos=repos.concat(chunk);if(chunk.length<100)break;page++;}repos.sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));return repos;}
+    async function fetchReadme(owner,repo){try{const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`);if(!res.ok)return null;const data=await res.json();const content=atob(data.content);const first=content.split('\n\n').find(p=>p.trim().length>0);return first?first.replace(/\n/g,' '):null;}catch(e){return null;}}
+    async function fetchTopics(owner,repo){try{const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/topics`,{headers:{'Accept':'application/vnd.github.mercy-preview+json'}});if(!res.ok)return[];const j=await res.json();return j.names||[];}catch(e){return[];}}
+    function createCard(repo){const link=document.createElement('a');link.className='card card-3d';link.href=repo.html_url;link.target='_blank';link.rel='noopener';const inner=document.createElement('div');inner.className='card-inner';const thumb=document.createElement('div');thumb.className='card-thumb';thumb.textContent=repo.name;const title=document.createElement('div');title.className='card-title';title.textContent=repo.name.replace(/[-_]/g,' ');const desc=document.createElement('div');desc.className='card-desc';desc.textContent='⏳ Loading project info...';const meta=document.createElement('div');meta.className='card-meta';inner.append(thumb,title,desc,meta);link.append(inner);grid.append(link);link.addEventListener('mousemove',e=>{const rect=link.getBoundingClientRect();const x=(e.clientX-rect.left)/rect.width-0.5;const y=(e.clientY-rect.top)/rect.height-0.5;const rx=(-y)*12;const ry=x*12;inner.style.transform=`rotateX(${rx}deg) rotateY(${ry}deg) translateZ(8px)`;});link.addEventListener('mouseleave',()=>{inner.style.transform='none';});return {link,inner,thumb,title,desc,meta};}
+    (async()=>{const repos=await fetchAllRepos();if(!repos||repos.length===0){grid.innerHTML='<div style="color:var(--muted)">No public repos found.</div>';return;}for(const r of repos){const cardEls=createCard(r);(async()=>{const [readme,topics,repoData]=await Promise.all([fetchReadme(owner,r.name),fetchTopics(owner,r.name),fetch(`https://api.github.com/repos/${owner}/${r.name}`).then(res=>res.json())]);cardEls.desc.textContent=readme||'⚡ Project details coming soon...';if(topics&&topics.length){cardEls.meta.innerHTML=topics.map(t=>`<span class="badge">${t}</span>`).join(' ');} let stats=''; if(repoData){stats=`⭐ ${repoData.stargazers_count} &nbsp; 🍴 ${repoData.forks_count} &nbsp; 🕒 ${new Date(repoData.updated_at).toLocaleDateString()}`;} let live=''; if(repoData&&(repoData.has_pages||repoData.homepage)){const liveUrl=repoData.homepage?repoData.homepage:`https://${owner}.github.io/${r.name}/`;live=` <a style="margin-left:8px;font-weight:600" href="${liveUrl}" target="_blank" rel="noopener">Live</a>`;} if(cardEls.meta.innerHTML) cardEls.meta.innerHTML+=`<div style="flex:1"></div><div class="meta-right">${stats}${live}</div>`;else cardEls.meta.innerHTML=`<div class="meta-right">${stats}${live}</div>`;})();}}
 
-    function frameFile(n){ return `male${String(n).padStart(4,'0')}.png`; }
-
-    function loadFrame(n, cb){
-      if (n < 1) n += TOTAL; if (n > TOTAL) n -= TOTAL;
-      if (cache[n]) { if(cb) cb(cache[n]); return; }
-      const i = new Image(); i.src = frameFile(n);
-      i.onload = ()=>{ cache[n] = i; if(!firstLoaded){ firstLoaded=true; document.getElementById('loading').style.display='none'; } if(cb) cb(i); };
-      i.onerror = ()=>{ /* ignore */ };
-    }
-
-    // load first frame
-    loadFrame(1, (img)=>{ draw(1); preload(1); });
-    function preload(center){ for(let off=-buffer; off<=buffer; off++){ let idx = Math.round(center) + off; if(idx<1) idx+=TOTAL; if(idx>TOTAL) idx-=TOTAL; loadFrame(idx); } }
-
-    function draw(frame){ const img = cache[Math.round(frame)]; if(!img) return; ctx.clearRect(0,0,W,H); const iw = img.width*scale; const ih = img.height*scale; const x = (W - iw)/2 + tiltX*30; const y = (H - ih)/2 + tiltY*30; ctx.drawImage(img, x, y, iw, ih); }
-
-    function update(){
-      current += velocity; velocity *= 0.92;
-      if(current > TOTAL) current = 1; if(current < 1) current = TOTAL;
-      const idx = Math.round(current);
-      if(cache[idx]) draw(current);
-      preload(idx);
-      requestAnimationFrame(update);
-    }
-    requestAnimationFrame(update);
-
-    // wheel -> velocity
-    window.addEventListener('wheel', (e)=>{ velocity += Math.sign(e.deltaY) * 2.2; }, {passive:true});
-    // mouse drag
-    let lastY=0; window.addEventListener('mousedown', (e)=>{ lastY = e.clientY; });
-    window.addEventListener('mousemove', (e)=>{ if(e.buttons){ const d = e.clientY - lastY; velocity += d*0.06; lastY = e.clientY; } tiltX = (e.clientX / W - 0.5); tiltY = (e.clientY / H - 0.5); });
-    // touch swipe
-    let tx=0, ty=0, tstart=0, lastTap=0, tapTimeout=null; let pinchDist=null;
-    window.addEventListener('touchstart',(e)=>{ if(e.touches.length===1){ tx=e.touches[0].clientX; ty=e.touches[0].clientY; tstart=Date.now(); } if(e.touches.length===2){ pinchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); } });
-    window.addEventListener('touchmove',(e)=>{ if(e.touches.length===1){ const dx = e.touches[0].clientX - tx; const dy = e.touches[0].clientY - ty; velocity += -dx*0.04; tx = e.touches[0].clientX; ty = e.touches[0].clientY; tiltX = (tx / W - 0.5); tiltY = (ty / H - 0.5); } else if(e.touches.length===2){ const dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); if(pinchDist){ const delta = dist - pinchDist; scale = Math.min(2, Math.max(0.5, scale + delta*0.003)); } pinchDist = dist; } }, {passive:false});
-    window.addEventListener('touchend',(e)=>{ if(e.touches.length===0 && e.changedTouches.length===1){ const dt = Date.now()-tstart; if(dt<200) { /* quick flick */ velocity *= 2.2; } // tap/double-tap handling
-      const now = Date.now(); const gap = now - lastTap; if(gap<300 && gap>0){ // double tap -> stop
-        velocity = 0; clearTimeout(tapTimeout);
-      } else {
-        tapTimeout = setTimeout(()=>{ /* single tap -> reset */ current = 1; },250);
-      } lastTap = now;
-    } if(e.touches.length<2) pinchDist = null; });
-
-    // keyboard controls
-    window.addEventListener('keydown',(e)=>{
-      if(e.key==='ArrowRight') velocity += 3;
-      if(e.key==='ArrowLeft') velocity -= 3;
-      if(e.key===' ') velocity = 0;
-      if(e.key.toLowerCase()==='r') current = 1;
-      if(e.key.toLowerCase()==='l') current = TOTAL;
-      if(e.key==='+') scale = Math.min(2, scale+0.1);
-      if(e.key==='-') scale = Math.max(0.5, scale-0.1);
-      if(e.key.toLowerCase()==='h'){ const o=document.getElementById('help-overlay'); o.style.opacity=(o.style.opacity==='0'? '1':'0'); }
-    });
-
-    // ========== Portfolio: auto-fetch all repos ===========
-    const owner = 'Bismay-exe';
-    const grid = document.getElementById('projects-grid');
-
-    async function fetchAllRepos(){
-      let repos = [];
-      let page = 1;
-      while(true){
-        const res = await fetch(`https://api.github.com/users/${owner}/repos?per_page=100&page=${page}`);
-        if(!res.ok) break;
-        const chunk = await res.json();
-        if(chunk.length===0) break;
-        repos = repos.concat(chunk);
-        if(chunk.length<100) break; page++;
-      }
-      // sort by updated desc
-      repos.sort((a,b)=> new Date(b.updated_at) - new Date(a.updated_at));
-      return repos;
-    }
-
-    async function fetchReadme(owner, repo){
-      try{
-        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`);
-        if(!res.ok) return null;
-        const data = await res.json();
-        const content = atob(data.content);
-        const first = content.split('\n\n').find(p=>p.trim().length>0);
-        return first ? first.replace(/\n/g,' ') : null;
-      }catch(e){return null}
-    }
-
-    async function fetchTopics(owner, repo){
-      try{
-        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/topics`, {headers: {'Accept':'application/vnd.github.mercy-preview+json'}});
-        if(!res.ok) return [];
-        const j = await res.json(); return j.names||[];
-      }catch(e){return []}
-    }
-
-    async function fetchRepo(owner, repo){
-      try{ const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`); if(!res.ok) return null; return await res.json(); }catch(e){return null}
-    }
-
-    function createCard(repo){
-      const link = document.createElement('a'); link.className='card card-3d'; link.href=repo.html_url; link.target='_blank'; link.rel='noopener';
-      const inner = document.createElement('div'); inner.className='card-inner';
-      const thumb = document.createElement('div'); thumb.className='card-thumb'; thumb.textContent = repo.name;
-      const title = document.createElement('div'); title.className='card-title'; title.textContent = repo.name.replace(/[-_]/g,' ');
-      const desc = document.createElement('div'); desc.className='card-desc'; desc.textContent = '⏳ Loading project info...';
-      const meta = document.createElement('div'); meta.className='card-meta'; meta.textContent = '';
-      inner.append(thumb,title,desc,meta); link.append(inner); grid.append(link);
-
-      // hover tilt
-      link.addEventListener('mousemove', (e)=>{
-        const rect = link.getBoundingClientRect(); const x = (e.clientX - rect.left)/rect.width - 0.5; const y = (e.clientY - rect.top)/rect.height - 0.5; const rx = (-y)*12; const ry = x*12; inner.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateZ(8px)`;
-      });
-      link.addEventListener('mouseleave', ()=>{ inner.style.transform='none'; });
-
-      return {link,inner,thumb,title,desc,meta};
-    }
-
-    (async ()=>{
-      const repos = await fetchAllRepos();
-      if(!repos || repos.length===0){ grid.innerHTML='<div style="color:var(--muted)">No public repos found.</div>'; return; }
-      for(const r of repos){
-        const cardEls = createCard(r);
-        // fetch details concurrently
-        (async ()=>{
-          const [readme, topics, repoData] = await Promise.all([fetchReadme(owner, r.name), fetchTopics(owner, r.name), fetchRepo(owner, r.name)]);
-          cardEls.desc.textContent = readme || '⚡ Project details coming soon...';
-          // badges
-          if(topics && topics.length){ cardEls.meta.innerHTML = topics.map(t=>`<span class="badge">${t}</span>`).join(' '); }
-          // stats + live
-          let stats = '';
-          if(repoData){ stats += `⭐ ${repoData.stargazers_count} &nbsp; 🍴 ${repoData.forks_count} &nbsp; 🕒 ${new Date(repoData.updated_at).toLocaleDateString()}`; }
-          // live demo
-          let live = '';
-          if(repoData && (repoData.has_pages || repoData.homepage)){
-            const liveUrl = repoData.homepage ? repoData.homepage : `https://${owner}.github.io/${r.name}/`;
-            live = ` <a style="margin-left:8px;font-weight:600" href="${liveUrl}" target="_blank" rel="noopener">Live</a>`;
-          }
-          if(cardEls.meta.innerHTML) cardEls.meta.innerHTML += '<div style="flex:1"></div>' + `<div class="meta-right">${stats}${live}</div>`; else cardEls.meta.innerHTML = `<div class="meta-right">${stats}${live}</div>`;
-        })();
-      }
-    })();
-
-    // help overlay drag (desktop only)
-    const help = document.getElementById('help-overlay'); let dragging=false,offX=0,offY=0;
-    help.addEventListener('mousedown',(e)=>{ dragging=true; offX = e.clientX - help.getBoundingClientRect().left; offY = e.clientY - help.getBoundingClientRect().top; help.style.transition='none'; });
-    window.addEventListener('mousemove',(e)=>{ if(dragging){ help.style.left = (e.clientX - offX) + 'px'; help.style.top = (e.clientY - offY) + 'px'; help.style.right='auto'; } });
-    window.addEventListener('mouseup',()=>{ if(dragging){ dragging=false; help.style.transition='opacity 0.6s ease'; } });
-
-    document.getElementById('year').textContent = new Date().getFullYear();
+    // help overlay drag
+    const help=document.getElementById('help-overlay');let dragging=false,offX=0,offY=0;
+    help.addEventListener('mousedown',e=>{dragging=true;offX=e.clientX-help.getBoundingClientRect().left;offY=e.clientY-help.getBoundingClientRect().top;help.style.transition='none';});
+    window.addEventListener('mousemove',e=>{if(dragging){help.style.left=(e.clientX-offX)+'px';help.style.top=(e.clientY-offY)+'px';help.style.right='auto';}});
+    window.addEventListener('mouseup',()=>{if(dragging){dragging=false;help.style.transition='opacity 0.6s';}});
+    document.getElementById('year').textContent=new Date().getFullYear();
   </script>
 </body>
 </html>
