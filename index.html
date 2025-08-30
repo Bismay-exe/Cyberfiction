@@ -1,78 +1,140 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/locomotive-scroll@3.5.4/dist/locomotive-scroll.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyberfiction Style • PNG Sequence</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    header {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+    header h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    header p {
+      font-size: 1.25rem;
+      color: #aaa;
+    }
+    #hero-sequence {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      max-width: 80vw;
+      max-height: 80vh;
+      pointer-events: none;
+      transition: transform 0.1s ease-out;
+      opacity: 0; /* hidden until preloaded */
+    }
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #0ff;
+      font-size: 1.5rem;
+      font-family: monospace;
+    }
+    main {
+      position: relative;
+      z-index: 2;
+      background: rgba(0,0,0,0.85);
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-    <div id="nav">
-        <h3><b>CYBER</b>FICTION*</h3>
-        <button>APRIL,2023</button>
-    </div>
-    <div id="main">
-        <div id="page">
-            <div id="loop">
-                <h1><b>CYBER</b>FICTION IS THE <b><i>REAL</i></b> <span>STORY</span> IN THE <span><i>METAVERSE.</i></span></h1>
-                <h1><b>CYBER</b>FICTION IS THE <b><i>REAL</i></b> <span>STORY</span> IN THE <span><i>METAVERSE.</i></span></h1>
-                <h1><b>CYBER</b>FICTION IS THE <b><i>REAL</i></b> <span>STORY</span> IN THE <span><i>METAVERSE.</i></span></h1>
-            </div>
-            <h3>CYBERFICTION AIMS TO BE A DECENTRALIZED COMMUNITY THAT CAN <br> CREATE NEW VALUES AND PROFITS THROUGH PLAY IN THE VIRTUAL <br> WORLD.</h3>
-            <h4>...SCROLL TO READ</h4>
-            <canvas></canvas>
-        </div>
-        <div id="page1">
-            <div id="right-text">
-                <h3>CYBERFICTION / KEY WORD</h3>
-                <h1>HAVE FUN
-                    <br>
-                    LET'S PLAY
-                    <br>
-                    JUST BE TOGETHER</h1>
-            </div>
-            <div id="left-text">
-                <h1>MAKE A STORY
-                    <br>
-                    TAKE A CHANCE
-                    <br>
-                    BUILD AND OWNED</h1>
-                    <h3>..AND MAINTAIN GOOD HUMANITY</h3>
-            </div>
-        </div>
-        <div id="page2">
-            <div id="text1">
-                <h3>CYBERFICTION / HAVE FUN</h3>
-                <h1>LET'S
-                    <br>
-                    HAVE FUN
-                    <br>
-                    TOGETHER</h1>
-            </div>
-            <div id="text2">
-                <p>LET'S HAVE A BLAST! LET'S JUST THROW AWAY AGE, GENDER, REGION, <br> STATUS, ETC., DON'T COMPETE, DON'T FIGHT, COOPERATE AND SHARE <br> WITH EACH OTHER AND ENJOY IT TOGETHER! SO THAT YOU CAN STAND <br> THERE IN THE NOT-TOO-DISTANT FUTURE AND DREAM OF ANOTHER NEW <br> FUTURE</p>
-            </div>
-        </div>
-        <div id="page3">
-            <div id="text3">
-                <h3>CYBERFICTION / PLAYGROUND</h3>
-                <h1>
+  <header>
+    <h1>Cyberfiction Inspired</h1>
+    <p>Interactive centerpiece using PNG sequence</p>
+  </header>
 
-CYBERFIELD
-<br>
-IS OUR
-<br>
-PLAYGROUND
-                </h1>
-               
-            </div>
-        </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@3.5.4/dist/locomotive-scroll.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js" integrity="sha512-cOH8ndwGgPo+K7pTvMrqYbmI8u8k6Sho3js0gOqVWTmQMlLIi6TbqGWRTpf1ga8ci9H3iPsvDLr4X7xwhC/+DQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/ScrollTrigger.min.js" integrity="sha512-AMl4wfwAmDM1lsQvVBBRHYENn1FR8cfOTpt8QVbb/P55mYOdahHD4LmHM1W55pNe3j/3od8ELzPf/8eNkkjISQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="script.js"></script>
+  <!-- Loading text -->
+  <div id="loading">Loading 0%</div>
+
+  <!-- Image sequence -->
+  <img id="hero-sequence" src="male0001.png" alt="3D Sequence Frame"/>
+
+  <main>
+    <h2>About</h2>
+    <p>This demo swaps a PNG sequence to simulate 3D rotation of a model. 
+       Replace <code>male0001.png ... male0300.png</code> in the root folder with your own frames.</p>
+    <div style="height:100vh"></div>
+  </main>
+
+  <script>
+    const hero = document.getElementById('hero-sequence');
+    const loading = document.getElementById('loading');
+
+    const totalFrames = 300; // you have 300 PNGs
+    let currentFrame = 1;
+    let targetRotX = 0, targetRotY = 0;
+    const frames = [];
+
+    // Preload all images
+    let loadedCount = 0;
+    for (let i = 1; i <= totalFrames; i++) {
+      const frameNumber = String(i).padStart(4, '0'); // male0001
+      const img = new Image();
+      img.src = `male${frameNumber}.png`;
+      img.onload = () => {
+        loadedCount++;
+        const percent = Math.floor((loadedCount / totalFrames) * 100);
+        loading.textContent = `Loading ${percent}%`;
+
+        if (loadedCount === totalFrames) {
+          loading.style.display = "none";
+          hero.style.opacity = 1;
+          startAnimation();
+        }
+      };
+      frames.push(img);
+    }
+
+    // Mouse interaction
+    window.addEventListener('mousemove', (e) => {
+      const x = (e.clientX / window.innerWidth) * 2 - 1;
+      const y = (e.clientY / window.innerHeight) * 2 - 1;
+      targetRotY = x * 10; // horizontal tilt
+      targetRotX = y * 10; // vertical tilt
+    });
+
+    // Scroll effect
+    window.addEventListener('scroll', () => {
+      const scale = 1 + window.scrollY * 0.001;
+      hero.style.transform = `translate(-50%, -50%) scale(${scale}) rotateX(${targetRotX}deg) rotateY(${targetRotY}deg)`;
+    });
+
+    // Sequence animation
+    function updateFrame() {
+      currentFrame = (currentFrame % totalFrames) + 1;
+      const frameNumber = String(currentFrame).padStart(4, '0');
+      hero.src = `male${frameNumber}.png`;
+    }
+
+    function startAnimation() {
+      setInterval(updateFrame, 100); // 10 fps auto rotation
+
+      function animateTilt() {
+        hero.style.transform = `translate(-50%, -50%) scale(1) rotateX(${targetRotX}deg) rotateY(${targetRotY}deg)`;
+        requestAnimationFrame(animateTilt);
+      }
+      animateTilt();
+    }
+  </script>
 </body>
 </html>
