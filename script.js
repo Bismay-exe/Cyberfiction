@@ -1,7 +1,3 @@
-/* ===========================
-   Original locomotive + canvas + GSAP logic
-   (kept from your uploaded script.js)
-   =========================== */
 function locomotive() {
   gsap.registerPlugin(ScrollTrigger);
 
@@ -37,12 +33,12 @@ function locomotive() {
 locomotive();
 
 
-/* canvas / PNG sequence rendering (kept) */
 const canvas = document.querySelector("canvas");
 const context = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+
 
 window.addEventListener("resize", function () {
   canvas.width = window.innerWidth;
@@ -50,7 +46,6 @@ window.addEventListener("resize", function () {
   render();
 });
 
-/* helper to return file lines (kept from uploaded script.js) */
 function files(index) {
   var data = `
      ./male0001.png
@@ -448,91 +443,3 @@ gsap.to("#page3",{
     scroller:`#main`
   }
 })
-
-/* ===========================
-   Crypto converter logic appended
-   (migrated from user's HTML file)
-   =========================== */
-
-const PRICES = { BTC: 6300000, ETH: 320000, USDT: 83.50, DOGE: 11.32 };
-const COINS = [
-  { symbol: 'BTC', name: 'Bitcoin', icon: '₿' },
-  { symbol: 'ETH', name: 'Ethereum', icon: 'Ξ' },
-  { symbol: 'USDT', name: 'Tether', icon: '₮' },
-  { symbol: 'DOGE', name: 'Dogecoin', icon: 'Ð' }
-];
-
-function formatINR(x) {
-  return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(x);
-}
-function renderCards() {
-  const grid = document.getElementById('priceGrid');
-  if (!grid) return;
-  grid.innerHTML = COINS.map(c=>`
-    <div class="glass rounded-3xl p-6 hover-3d">
-      <div class="text-3xl">${c.icon}</div>
-      <div class="font-semibold">${c.name}</div>
-      <div class="text-sm text-slate-400">${c.symbol}</div>
-      <div class="mt-3 text-xl font-bold">${formatINR(PRICES[c.symbol])}</div>
-    </div>`).join('');
-}
-
-function populateCoinSelects(){
-  const opts = COINS.map(c=>`<option value="${c.symbol}">${c.symbol} — ${c.name}</option>`).join('');
-  if (document.getElementById('c2i-coin')) document.getElementById('c2i-coin').innerHTML=opts;
-  if (document.getElementById('i2c-coin')) document.getElementById('i2c-coin').innerHTML=opts;
-}
-function calc(){
-  const cEl = document.getElementById('c2i-coin');
-  const amtEl = document.getElementById('c2i-amount');
-  const c2iInr = document.getElementById('c2i-inr');
-  if (cEl && amtEl && c2iInr) {
-    const c = cEl.value;
-    const amt = parseFloat(amtEl.value||0);
-    c2iInr.value = formatINR((PRICES[c]||0)*amt);
-  }
-
-  const ciEl = document.getElementById('i2c-coin');
-  const inrEl = document.getElementById('i2c-inr');
-  const i2cAmount = document.getElementById('i2c-amount');
-  if (ciEl && inrEl && i2cAmount) {
-    const ci = ciEl.value;
-    const inr = parseFloat(inrEl.value||0);
-    i2cAmount.value = (PRICES[ci]?inr/PRICES[ci]:0).toFixed(8);
-  }
-}
-
-document.addEventListener('input',calc);
-document.addEventListener('DOMContentLoaded',()=>{
-  renderCards();
-  populateCoinSelects();
-});
-
-/* ==== 3D Tilt Effect (applies to .hover-3d elements) ==== */
-document.addEventListener('mousemove', (e)=>{
-  document.querySelectorAll('.hover-3d').forEach(card=>{
-    const rect=card.getBoundingClientRect();
-    const x=e.clientX-rect.left;
-    const y=e.clientY-rect.top;
-    const cx=rect.width/2, cy=rect.height/2;
-    const rotateX=((y-cy)/20).toFixed(2);
-    const rotateY=((x-cx)/20).toFixed(2);
-    card.style.transform=`perspective(1000px) rotateX(${-rotateX}deg) rotateY(${rotateY}deg)`;
-  });
-});
-document.addEventListener('mouseleave', ()=>{
-  document.querySelectorAll('.hover-3d').forEach(card=>{
-    card.style.transform = "perspective(1000px) rotateX(0) rotateY(0)";
-  });
-});
-
-/* ==== Localized Glow Tracking for .glow-text ==== */
-document.querySelectorAll('.glow-text').forEach(el => {
-  el.addEventListener('mousemove', e => {
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    el.style.setProperty('--x', `${x}px`);
-    el.style.setProperty('--y', `${y}px`);
-  });
-});
