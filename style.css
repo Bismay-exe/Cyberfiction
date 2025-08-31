@@ -23,11 +23,14 @@ html,body{
 }
 
 /* canvas */
-canvas{
-    position: relative;
-    z-index: -1;
-    max-width: 100vw;
-    max-height: 100vh;
+canvas {
+  position: fixed;   /* stick it to the viewport */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;       /* now it's in the background */
+  object-fit: cover; /* make it fill nicely */
 }
 
 /* marquee loop (kept) */
